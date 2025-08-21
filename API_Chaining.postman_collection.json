@@ -1,0 +1,470 @@
+{
+	"info": {
+		"_postman_id": "a1682889-61ec-4409-bfb1-2a639b38a43a",
+		"name": "API Chaining",
+		"description": "API **chaining** means using the output of one API call as the input for another API call, creating a sequence (or \"chain\") of requests.\n\nIn simple words:  \n  \n👉 The response from API **A** is passed to API **B**, then to API **C**, and so on.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43290527",
+		"_collection_link": "https://www.postman.com/api-testing-using-postman/workspace/api-testing-postman/collection/43290527-a1682889-61ec-4409-bfb1-2a639b38a43a?action=share&source=collection_link&creator=43290527"
+	},
+	"item": [
+		{
+			"name": "Step1_Generate_Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ---------------------- Basic Checks ----------------------\r",
+							"\r",
+							"// ✅ Status Code\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// ✅ Response Time\r",
+							"pm.test(\"Response time is under 2000ms\", function () {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// ✅ Response Body Exists\r",
+							"pm.test(\"Response body is not empty\", function () {\r",
+							"    pm.expect(pm.response.text()).to.not.be.empty;\r",
+							"});\r",
+							"\r",
+							"\r",
+							"// ---------------------- Body & Key Validation ----------------------\r",
+							"\r",
+							"let jsonData;\r",
+							"try {\r",
+							"    jsonData = pm.response.json();\r",
+							"} catch (e) {\r",
+							"    pm.test(\"Response is valid JSON\", function () {\r",
+							"        pm.expect.fail(\"Response is not valid JSON\");\r",
+							"    });\r",
+							"}\r",
+							"\r",
+							"// ✅ Schema Validation\r",
+							"const schema = {\r",
+							"    \"type\": \"object\",\r",
+							"    \"properties\": {\r",
+							"        \"token\": { \"type\": \"string\" }\r",
+							"    },\r",
+							"    \"required\": [\"token\"]\r",
+							"};\r",
+							"\r",
+							"pm.test(\"Schema validation\", function () {\r",
+							"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+							"});\r",
+							"\r",
+							"// ✅ Keys Validation (no extra/missing keys)\r",
+							"pm.test(\"Response has only expected keys\", function () {\r",
+							"    const expectedKeys = [\"token\"];\r",
+							"    pm.expect(Object.keys(jsonData)).to.eql(expectedKeys);\r",
+							"});\r",
+							"\r",
+							"// ✅ Missing Key\r",
+							"pm.test(\"Token key should not be missing\", function () {\r",
+							"    pm.expect(jsonData).to.have.property(\"token\");\r",
+							"});\r",
+							"\r",
+							"// ✅ Duplicate Key (JSON doesn’t allow duplicates, simulate by checking)\r",
+							"pm.test(\"No duplicate keys present\", function () {\r",
+							"    let keys = Object.keys(jsonData);\r",
+							"    let uniqueKeys = [...new Set(keys)];\r",
+							"    pm.expect(keys.length).to.eql(uniqueKeys.length);\r",
+							"});\r",
+							"\r",
+							"// ✅ Data Validation\r",
+							"pm.test(\"Token is a valid non-empty string\", function () {\r",
+							"    pm.expect(jsonData.token).to.be.a(\"string\").and.not.empty;\r",
+							"});\r",
+							"\r",
+							"\r",
+							"// ---------------------- Header & Cookies ----------------------\r",
+							"\r",
+							"// ✅ Headers\r",
+							"pm.test(\"Content-Type header is application/json\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\");\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+							"});\r",
+							"\r",
+							"// ✅ Cookies (Restful-Booker does not set cookies but we validate presence check)\r",
+							"pm.test(\"No unexpected cookies\", function () {\r",
+							"    pm.expect(pm.cookies.toObject()).to.be.an(\"object\");\r",
+							"});\r",
+							"\r",
+							"// ✅ Auth Header not required in this endpoint\r",
+							"pm.test(\"No Auth header required for /auth\", function () {\r",
+							"    let authHeader = pm.request.headers.get(\"Authorization\");\r",
+							"    pm.expect(authHeader).to.be.undefined;\r",
+							"});\r",
+							"\r",
+							"\r",
+							"console.log(pm.globals.get(\"name\"));\r",
+							"console.log(pm.collectionVariables.get(\"c_name\"));\r",
+							"console.log(pm.environment.get(\"name\"));\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\" : \"admin\",\r\n    \"password\" : \"password123\"\r\n}\r\n\r\n\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://restful-booker.herokuapp.com/auth",
+					"protocol": "https",
+					"host": [
+						"restful-booker",
+						"herokuapp",
+						"com"
+					],
+					"path": [
+						"auth"
+					]
+				},
+				"description": "Creates a new auth token to use for access to the PUT and DELETE /booking\n\nGenerated from cURL: curl -X POST  \n[https://restful-booker.herokuapp.com/auth](https://restful-booker.herokuapp.com/auth)  \n\\-H 'Content-Type: application/json'  \n\\-d '{  \n\"username\" : \"admin\",  \n\"password\" : \"password123\"  \n}'"
+			},
+			"response": []
+		},
+		{
+			"name": "Step2_Create Booking using Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"bookingid\",pm.response.json()[\"bookingid\"]);\r",
+							"\r",
+							"pm.test(\"TC#1 - Verify the status Code\", function(){\r",
+							"    pm.expect(pm.response.code).to.be.equal(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"TC#2 - Verify the booking ID is updated as shown in JSON\", function(){\r",
+							"\r",
+							"    var responseJSON = pm.response.json();\r",
+							"    var bookingid = responseJSON[\"bookingid\"];   \r",
+							"    console.log(bookingid);\r",
+							"    pm.expect(bookingid).to.equal(pm.response.json()[\"bookingid\"]);\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\" : \"{{$randomFirstName}}\",\r\n    \"lastname\" : \"{{$randomLastName}}\",\r\n    \"totalprice\" : 111,\r\n    \"depositpaid\" : true,\r\n    \"bookingdates\" : {\r\n        \"checkin\" : \"2018-01-01\",\r\n        \"checkout\" : \"2019-01-01\"\r\n    },\r\n    \"additionalneeds\" : \"Breakfast\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://restful-booker.herokuapp.com/booking",
+					"protocol": "https",
+					"host": [
+						"restful-booker",
+						"herokuapp",
+						"com"
+					],
+					"path": [
+						"booking"
+					]
+				},
+				"description": "Generated from cURL: curl -X POST \\\r\n  https://restful-booker.herokuapp.com/booking \\\r\n  -H 'Content-Type: application/json' \\\r\n  -d '{\r\n    \"firstname\" : \"Jim\",\r\n    \"lastname\" : \"Brown\",\r\n    \"totalprice\" : 111,\r\n    \"depositpaid\" : true,\r\n    \"bookingdates\" : {\r\n        \"checkin\" : \"2018-01-01\",\r\n        \"checkout\" : \"2019-01-01\"\r\n    },\r\n    \"additionalneeds\" : \"Breakfast\"\r\n}'"
+			},
+			"response": []
+		},
+		{
+			"name": "Step3_Get Booking using Booking ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ---------------------- Basic Checks ----------------------\r",
+							"\r",
+							"// ✅ Status Code\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// ✅ Response Time\r",
+							"pm.test(\"Response time is under 2000ms\", function () {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+							"});\r",
+							"\r",
+							"// ---------------------- Header & Cookies ----------------------\r",
+							"\r",
+							"// ✅ Headers\r",
+							"pm.test(\"Content-Type header is application/json\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\");\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://restful-booker.herokuapp.com/booking/{{bookingid}}",
+					"protocol": "https",
+					"host": [
+						"restful-booker",
+						"herokuapp",
+						"com"
+					],
+					"path": [
+						"booking",
+						"{{bookingid}}"
+					]
+				},
+				"description": "Returns a specific booking based upon the booking id provided\n\nGenerated from cURL: curl -i [https://restful-booker.herokuapp.com/booking/1](https://restful-booker.herokuapp.com/booking/1)"
+			},
+			"response": []
+		},
+		{
+			"name": "Step4_Update Booking using Booking ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ---------------------- Basic Checks ----------------------\r",
+							"\r",
+							"// ✅ Status Code\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// ✅ Response Time\r",
+							"pm.test(\"Response time is under 2000ms\", function () {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
+							"});\r",
+							"\r",
+							"// ---------------------- Header & Cookies ----------------------\r",
+							"\r",
+							"// ✅ Headers\r",
+							"pm.test(\"Content-Type header is application/json\", function () {\r",
+							"    pm.response.to.have.header(\"Content-Type\");\r",
+							"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\r",
+							"});\r",
+							"\r",
+							"// ✅ Verification that first name is updated correctly for respective Booking ID\r",
+							"\r",
+							"pm.test(\"Verify that the firstname == James\", function(){\r",
+							"    \r",
+							"    var responseJSON = pm.response.json();\r",
+							"    var firstname = responseJSON[\"firstname\"];\r",
+							"    pm.expect(firstname).to.equal(\"James\");\r",
+							"\r",
+							"});\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{pw}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json"
+					},
+					{
+						"key": "Cookie",
+						"value": "token = 4627c8e03c84ef4",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\" : \"James\",\r\n    \"lastname\" : \"Blue\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://restful-booker.herokuapp.com/booking/{{bookingid}}",
+					"protocol": "https",
+					"host": [
+						"restful-booker",
+						"herokuapp",
+						"com"
+					],
+					"path": [
+						"booking",
+						"{{bookingid}}"
+					]
+				},
+				"description": "Updates a current booking with a partial payload  \nGenerated from cURL: curl -X PUT  \n[https://restful-booker.herokuapp.com/booking/1](https://restful-booker.herokuapp.com/booking/1)  \n\\-H 'Content-Type: application/json'  \n\\-H 'Accept: application/json'  \n\\-H 'Cookie: token=abc123'  \n\\-d '{  \n\"firstname\" : \"James\",  \n\"lastname\" : \"Brown\"  \n}'"
+			},
+			"response": []
+		},
+		{
+			"name": "Step5_Delete  Booking using Booking ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ---------------------- Basic Checks ----------------------\r",
+							"\r",
+							"// ✅ Status Code\r",
+							"pm.test(\"Status code is 201\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"// ✅ Response Time\r",
+							"pm.test(\"Response time is under 2000ms\", function () {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "{{pw}}",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Cookie",
+						"value": "token=e3dd89ccc32f58b"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://restful-booker.herokuapp.com/booking/1?id=4165",
+					"protocol": "https",
+					"host": [
+						"restful-booker",
+						"herokuapp",
+						"com"
+					],
+					"path": [
+						"booking",
+						"1"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "4165"
+						}
+					]
+				},
+				"description": "Deletes a booking from the API. Requires an authorization token to be set in the header or a Basic auth header.\n\nGenerated from cURL: curl -X DELETE  \n[https://restful-booker.herokuapp.com/booking/1](https://restful-booker.herokuapp.com/booking/1)  \n\\-H 'Content-Type: application/json'  \n\\-H 'Cookie: token=abc123'"
+			},
+			"response": []
+		}
+	]
+}
